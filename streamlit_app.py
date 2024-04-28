@@ -44,7 +44,8 @@ def clear_chat_history():
     st.session_state.messages = [{"role": "assistant", "content": "Hey, how may I assist you today?"}]
 st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
-# Function for generating LLaMA2 response. Refactored from https://github.com/a16z-infra/llama2-chatbot
+
+# Function for generating LLaMA2 response. Adjusted to use the correct model.
 def generate_llama2_response(prompt_input):
     string_dialogue = "You are a helpful assistant. You do not respond as 'User' or pretend to be 'User'. You only respond once as 'Assistant'."
     for dict_message in st.session_state.messages:
@@ -52,10 +53,20 @@ def generate_llama2_response(prompt_input):
             string_dialogue += "User: " + dict_message["content"] + "\n\n"
         else:
             string_dialogue += "Assistant: " + dict_message["content"] + "\n\n"
-    output = replicate.run('a16z-infra/llama13b-v2-chat:df7690f1994d94e96ad9d568eac121aecf50684a0b0963b25a41cc40061269e5', 
+
+    selected_model_map = {
+        'Llama2-7B': 'a16z-infra/llama7b-v2-chat:4f0a4744c7295c024a1de15e1a63c880d3da035fa1f49bfd344fe076074c8eea',
+        'Llama2-13B': 'a16z-infra/llama13b-v2-chat:df7690f1994d94e96ad9d568eac121aecf50684a0b0963b25a41cc40061269e5',
+        'Llama2-70B': 'a16z-infra/llama70b-v2-chat:some_model_hash_here',  # Ensure you have the correct model hash here!
+        'Llama3-70B': 'a16z-infra/llama70b-v3-chat:some_model_hash_here'   # Ensure you have the correct model hash here!
+    }
+    llm = selected_model_map[selected_model]
+
+    output = replicate.run(llm, 
                            input={"prompt": f"{string_dialogue} {prompt_input} Assistant: ",
                                   "temperature":temperature, "top_p":top_p, "max_length":max_length, "repetition_penalty":1})
     return output
+
 
 # User-provided prompt
 if prompt := st.chat_input(disabled=not replicate_api):
